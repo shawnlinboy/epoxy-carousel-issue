@@ -1,14 +1,11 @@
 package com.test.TestEpoxy
 
-import android.content.Intent
-import android.graphics.Color
 import android.os.Bundle
-import android.telephony.ims.ProvisioningManager.FeatureProvisioningCallback
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Toast
+import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
 import com.airbnb.epoxy.EpoxyModel
 import com.airbnb.epoxy.carousel
@@ -24,6 +21,8 @@ class FirstFragment : Fragment() {
     // This property is only valid between onCreateView and
     // onDestroyView.
     private val binding get() = _binding!!
+
+    private val savedStateViewModel: SavedStateViewModel by viewModels()
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -45,7 +44,11 @@ class FirstFragment : Fragment() {
             })
         }
         binding.textviewFirst.withModels {
-
+            // Restore the state we saved in `onDestroyView()`
+            val bundle = savedStateViewModel.restoreState()
+            bundle?.let {
+                this.onRestoreInstanceState(it)
+            }
             carousel {
                 id("carousel")
                 models(model)
@@ -58,7 +61,13 @@ class FirstFragment : Fragment() {
     }
 
     override fun onDestroyView() {
-        super.onDestroyView()
+        val bundle = Bundle() // Or making it as a member
+        binding.textviewFirst.withModels {
+            // Get the controller, Epoxy will reuse the same one, so no worry about getting wrong one.
+            this.onSaveInstanceState(bundle) // Fulfill the bundle
+            savedStateViewModel.saveState(bundle) // save it to a `SavedStateHandle`
+        }
         _binding = null
+        super.onDestroyView()
     }
 }
